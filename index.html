@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Estudio de Grabación</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #eee;
+      font-family: sans-serif;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .button {
+      background-color: #333;
+      color: #eee;
+      border: none;
+      padding: 10px 20px;
+      margin: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .button:hover {
+      background-color: #555;
+    }
+    .logo {
+      width: 150px;
+      height: 150px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+   <img width="48" height="48" src="https://img.icons8.com/color/48/music-library--v1.png" alt="music-library--v1"/>
+    <h1>Estudio de Grabación</h1>
+    <h3>Para continuar otorgar algunos permisos </h3>
+    <button class="button" id="cameraButton">Acceder a la cámara</button>
+    <button class="button" id="microphoneButton">Acceder al micrófono</button>
+    <button class="button" id="fileButton">Elegir archivos</button>
+  </div>
+
+  <script>
+    const cameraButton = document.getElementById('cameraButton');
+    const microphoneButton = document.getElementById('microphoneButton');
+    const fileButton = document.getElementById('fileButton');
+
+    cameraButton.addEventListener('click', () => {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          // Crea un elemento de video y muestra la transmisión
+          const video = document.createElement('video');
+          video.srcObject = stream;
+          video.autoplay = true;
+          document.body.appendChild(video);
+        })
+        .catch(err => {
+          console.error('Error al acceder a la cámara:', err);
+        });
+    });
+
+    microphoneButton.addEventListener('click', () => {
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+          // Crea un elemento de audio y reproduce la transmisión
+          const audio = document.createElement('audio');
+          audio.srcObject = stream;
+          audio.autoplay = true;
+          document.body.appendChild(audio);
+        })
+        .catch(err => {
+          console.error('Error al acceder al micrófono:', err);
+        });
+    });
+
+    fileButton.addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '*/*';
+      input.click();
+
+      input.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        // Procesa el archivo aquí (por ejemplo, muestra su nombre o contenido)
+        console.log(file.name);
+      });
+    });
+  </script>
+</body>
+</html>
