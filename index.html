@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>internet fre</title>
+    <title>Subir Imagen a Firebase</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js"></script>
     <style>
@@ -80,6 +80,10 @@
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(stream => {
                 video.srcObject = stream;
+            })
+            .catch(error => {
+                console.error("Error al acceder a la cámara:", error);
+                alert("No se pudo acceder a la cámara. Asegúrate de que está habilitada.");
             });
 
         document.getElementById('captura').addEventListener('click', () => {
@@ -90,10 +94,19 @@
             ctx.drawImage(video, 0, 0);
 
             canvas.toBlob(blob => {
-                const ref = storage.ref('imagenes/' + Date.now() + '.png');
-                ref.put(blob).then(() => {
-                    console.log('Imagen subida con éxito');
-                });
+                if (blob) {
+                    const ref = storage.ref('imagenes/' + Date.now() + '.png');
+                    ref.put(blob).then(() => {
+                        console.log('Imagen subida con éxito');
+                        alert('Imagen subida con éxito');
+                    }).catch(error => {
+                        console.error('Error al subir la imagen:', error);
+                        alert('Error al subir la imagen. Inténtalo de nuevo.');
+                    });
+                } else {
+                    console.error('Error al crear el blob de la imagen.');
+                    alert('Error al capturar la imagen. Inténtalo de nuevo.');
+                }
             }, 'image/png');
         });
     </script>
