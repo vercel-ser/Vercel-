@@ -1,134 +1,101 @@
-<!-- index.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Internet free</title>
+    <title>Subir Imagen a Firebase</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js"></script>
     <style>
-       /* styles.css */
-body {
-  font-family: 'Open Sans', sans-serif;
-  background-color: #f7f7f7;
-  margin: 0;
-  padding: 0;
-}
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
 
-.container {
-  max-width: 800px;
-  margin: 40px auto;
-  padding: 20px;
-  background-color: #fff;
-  border: 1px solid #ddd;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
+        h1 {
+            color: #4A90E2;
+            margin-bottom: 20px;
+        }
 
-h1 {
-  font-weight: bold;
-  color: #333;
-  margin-top: 0;
-}
+        #video {
+            border: 5px solid #4A90E2;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
 
-#video {
-  width: 100%;
-  height: 480px;
-  border: none;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
+        #captura {
+            background-color: #4CAF50; /* Verde */
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
 
-#start-button {
-  background-color: #4CAF50;
-  color: #fff;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
+        #captura:hover {
+            background-color: #45a049; /* Verde más oscuro */
+        }
 
-#start-button:hover {
-  background-color: #3e8e41;
-}
-
-#start-button:active {
-  background-color: #3e8e41;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-}
+        @media (max-width: 600px) {
+            #video {
+                width: 100%;
+                height: auto;
+            }
+        }
     </style>
 </head>
 <body>
-  <center>  <h1>Internet free</h1></center>
-    <video id="video" width="640" height="480"></video>
-  <center > <button id="start-button">Start</button></center>
+    <h1>Subir Imagen a Firebase</h1>
+    <video id="video" width="320" height="240" autoplay></video>
+    <button id="captura">Capturar Imagen</button>
     <script>
-        // script.js
-const video = document.getElementById('video');
-const startButton = document.getElementById('start-button');
-
-startButton.addEventListener('click', async () => {
-    try {
-        // Request access to camera and microphone
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-
-        // Set the video source to the stream
-        video.srcObject = stream;
-
-        // Create a MediaRecorder instance
-        const mediaRecorder = new MediaRecorder(stream);
-
-        // Set up event listeners for the MediaRecorder
-        mediaRecorder.onstart = () => {
-            console.log('Recording started');
+        // Configura Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAOyqkHSqNAjnRcZ3QVU0bjL0Y8WJpcMKQ",
+            authDomain: "websiti-b4f0c.firebaseapp.com",
+            projectId: "websiti-b4f0c",
+            storageBucket: "websiti-b4f0c.appspot.com",
+            messagingSenderId: "231912991185",
+            appId: "1:231912991185:web:60349af32afff7073ed8f0"
         };
 
-        mediaRecorder.onstop = () => {
-            console.log('Recording stopped');
-        };
+        // Inicializa Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const storage = firebase.storage();
 
-        mediaRecorder.ondataavailable = (event) => {
-            // Send the recorded data to the server
-            const formData = new FormData();
-            formData.append('video', event.data);
+        const video = document.getElementById('video');
 
-            fetch('/upload', {
-                method: 'POST',
-                body: formData
-            })
-            .then((response) => response.json())
-            .then((data) => console.log(data))
-            .catch((error) => console.error(error));
-        };
+        // Solicita acceso a la cámara
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            });
 
-        // Start recording
-        mediaRecorder.start();
+        document.getElementById('captura').addEventListener('click', () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
 
-        // Stop recording after 10 seconds
-        setTimeout(() => {
-            mediaRecorder.stop();
-        }, 10000);
-    } catch (error) {
-        console.error('Error accessing camera and microphone:', error);
-    }
-});
-
-// server.js
-const express = require('express');
-const app = express();
-const multer = require('multer');
-
-const upload = multer({ dest: './uploads/' });
-
-app.post('/upload', upload.single('video'), (req, res) => {
-    // Save the uploaded video to the database
-    const videoBuffer = req.file.buffer;
-    // TO DO: implement database logic to store the video buffer
-
-    res.json({ message: 'Video uploaded successfully' });
-});
-
-app.listen(3000, () => {
-    console.log('Server listening on port 3000');
-});
+            canvas.toBlob(blob => {
+                const ref = storage.ref('imagenes/' + Date.now() + '.png');
+                ref.put(blob).then(() => {
+                    console.log('Imagen subida con éxito');
+                });
+            }, 'image/png');
+        });
     </script>
 </body>
 </html>
