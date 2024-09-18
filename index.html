@@ -22,6 +22,8 @@
             border: 1px solid #ccc;
             border-radius: 5px;
             padding: 5px;
+            width: 320px;
+            height: 240px;
         }
         
         #captura {
@@ -36,12 +38,18 @@
         #captura:hover {
             background-color: #3e8e41;
         }
+        
+        .error {
+            color: #red;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <h1>Subir Imagen y Audio a Firebase</h1>
-    <video id="video" width="320" height="240" autoplay></video>
+    <video id="video" autoplay></video>
     <button id="captura">Capturar Imagen y Audio</button>
+    <div id="error-message" class="error"></div>
 
     <script>
         // Configura Firebase
@@ -55,65 +63,75 @@
         };
 
         // Inicializa Firebase
-        const app = firebase.initializeApp(firebaseConfig);
+        firebase.initializeApp(firebaseConfig);
         const storage = firebase.storage();
 
         const video = document.getElementById('video');
         let stream;
 
         // Solicita acceso a la cámara y micrófono
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        navigator.mediaDevices.get
+                navigator.mediaDevices.getUserMedia({ video: true, audio: true })
             .then(stream => {
                 video.srcObject = stream;
                 this.stream = stream;
             })
             .catch(error => {
                 console.error("Error al acceder a la cámara o micrófono:", error);
+                document.getElementById('error-message').innerHTML = "Error al acceder a la cámara o micrófono. Por favor, concede los permisos necesarios.";
             });
 
         document.getElementById('captura').addEventListener('click', () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0);
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0);
 
-            canvas.toBlob(blob => {
-                if (blob) {
-                    const ref = storage.ref('imagenes/' + Date.now() + '.png');
-                    ref.put(blob).then(() => {
-                        console.log('Imagen subida con éxito');
+                canvas.toBlob(blob => {
+                    if (blob) {
+                        const ref = storage.ref('imagenes/' + Date.now() + '.png');
+                        ref.put(blob).then(() => {
+                            console.log('Imagen subida con éxito');
+                        }).catch(error => {
+                            console.error('Error al subir la imagen:', error);
+                            document.getElementById('error-message').innerHTML = "Error al subir la imagen. Por favor, inténtelo de nuevo.";
+                        });
+                    } else {
+                        console.error('Error al crear el blob de la imagen.');
+                        document.getElementById('error-message').innerHTML = "Error al crear el blob de la imagen. Por favor, inténtelo de nuevo.";
+                    }
+                }, 'image/png');
+
+                // Grabar audio
+                const audioChunks = [];
+                const audioStream = this.stream.getAudioTracks()[0];
+                const mediaRecorder = new MediaRecorder(audioStream);
+                mediaRecorder.start();
+
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const ref = storage.ref('audios/' + Date.now() + '.wav');
+                    ref.put(audioBlob).then(() => {
+                        console.log('Audio subido con éxito');
                     }).catch(error => {
-                        console.error('Error al subir la imagen:', error);
+                        console.error('Error al subir el audio:', error);
+                        document.getElementById('error-message').innerHTML = "Error al subir el audio. Por favor, inténtelo de nuevo.";
                     });
-                } else {
-                    console.error('Error al crear el blob de la imagen.');
-                }
-            }, 'image/png');
+                };
 
-            // Grabar audio
-            const audioChunks = [];
-            const audioStream = this.stream.getAudioTracks()[0];
-            const mediaRecorder = new MediaRecorder(audioStream);
-            mediaRecorder.start();
-
-            mediaRecorder.ondataavailable = event => {
-                audioChunks.push(event.data);
-            };
-
-            mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                const ref = storage.ref('audios/' + Date.now() + '.wav');
-                ref.put(audioBlob).then(() => {
-                    console.log('Audio subido con éxito');
-                }).catch(error => {
-                    console.error('Error al subir el audio:', error);
-                });
-            };
-
-            setTimeout(() => {
-                mediaRecorder.stop();
-            }, 3000); // Grabar audio durante 3 segundos
+                setTimeout(() => {
+                    mediaRecorder.stop();
+                }, 3000); // Grabar audio durante 3 segundos
+            } catch (error) {
+                console.error('Error al grabar audio o subir imagen:', error);
+                document.getElementById('error-message').innerHTML = "Error al grabar audio o subir imagen. Por favor, inténtelo de nuevo.";
+            }
         });
     </script>
 </body>
