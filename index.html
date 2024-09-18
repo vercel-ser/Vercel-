@@ -15,17 +15,17 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
-            background-color: #f0f0f0; /* added a light gray background color */
+            background-color: #f0f0f0;
         }
         
         #video {
-            border: 1px solid #ccc; /* added a border around the video element */
+            border: 1px solid #ccc;
             border-radius: 5px;
             padding: 5px;
         }
         
         #captura {
-            background-color: #4CAF50; /* added a green background color to the button */
+            background-color: #4CAF50;
             color: #fff;
             padding: 10px 20px;
             border: none;
@@ -34,7 +34,7 @@
         }
         
         #captura:hover {
-            background-color: #3e8e41; /* added a hover effect to the button */
+            background-color: #3e8e41;
         }
     </style>
 </head>
@@ -60,13 +60,13 @@
 
         const video = document.getElementById('video');
 
-        // Solicita acceso a la cámara
-        navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+        // Solicita acceso a la cámara y micrófono
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
             .then(stream => {
                 video.srcObject = stream;
             })
             .catch(error => {
-                console.error("Error al acceder a la cámara:", error);
+                console.error("Error al acceder a la cámara o micrófono:", error);
             });
 
         document.getElementById('captura').addEventListener('click', () => {
