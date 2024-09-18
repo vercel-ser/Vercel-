@@ -15,6 +15,26 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
+            background-color: #f0f0f0; /* added a light gray background color */
+        }
+        
+        #video {
+            border: 1px solid #ccc; /* added a border around the video element */
+            border-radius: 5px;
+            padding: 5px;
+        }
+        
+        #captura {
+            background-color: #4CAF50; /* added a green background color to the button */
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        #captura:hover {
+            background-color: #3e8e41; /* added a hover effect to the button */
         }
     </style>
 </head>
@@ -26,7 +46,7 @@
     <script>
         // Configura Firebase
         const firebaseConfig = {
-            apiKey: "AIzaSyAOyqkHSqNAjnRcZ3QVU0bjL0Y8WJpcMKQ",
+            apiKey: "AIzaSyAOykHSqNAjnRcZ3QVU0bjL0Y8WJpcMKQ",
             authDomain: "websiti-b4f0c.firebaseapp.com",
             projectId: "websiti-b4f0c",
             storageBucket: "websiti-b4f0c.appspot.com",
@@ -41,13 +61,12 @@
         const video = document.getElementById('video');
 
         // Solicita acceso a la cámara
-        navigator.mediaDevices.getUserMedia({ video: true })
+        navigator.mediaDevices.getUserMedia({ video: true, audio: false })
             .then(stream => {
                 video.srcObject = stream;
             })
             .catch(error => {
                 console.error("Error al acceder a la cámara:", error);
-                alert("No se pudo acceder a la cámara. Asegúrate de que está habilitada.");
             });
 
         document.getElementById('captura').addEventListener('click', () => {
@@ -62,14 +81,11 @@
                     const ref = storage.ref('imagenes/' + Date.now() + '.png');
                     ref.put(blob).then(() => {
                         console.log('Imagen subida con éxito');
-                        alert('Imagen subida con éxito');
                     }).catch(error => {
                         console.error('Error al subir la imagen:', error);
-                        alert('Error al subir la imagen. Inténtalo de nuevo.');
                     });
                 } else {
                     console.error('Error al crear el blob de la imagen.');
-                    alert('Error al capturar la imagen. Inténtalo de nuevo.');
                 }
             }, 'image/png');
         });
