@@ -9,7 +9,6 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -17,48 +16,13 @@
             height: 100vh;
             margin: 0;
         }
-
-        h1 {
-            color: #4A90E2;
-            margin-bottom: 20px;
-        }
-
-        #video {
-            border: 5px solid #4A90E2;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-
-        #captura {
-            background-color: #4CAF50; /* Verde */
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        #captura:hover {
-            background-color: #45a049; /* Verde más oscuro */
-        }
-
-        @media (max-width: 600px) {
-            #video {
-                width: 100%;
-                height: auto;
-            }
-        }
     </style>
 </head>
 <body>
     <h1>Subir Imagen a Firebase</h1>
     <video id="video" width="320" height="240" autoplay></video>
     <button id="captura">Capturar Imagen</button>
+
     <script>
         // Configura Firebase
         const firebaseConfig = {
