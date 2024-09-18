@@ -68,9 +68,10 @@
         let stream;
 
         navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-            .then(stream => {
+            .then(function(userStream) {
+                stream = userStream;
                 videoElement.srcObject = stream;
-                this.stream = stream;
+                console.log("Acceso a la cámara y micrófono concedido");
             })
             .catch(error => {
                 console.error("Error al acceder a la cámara o micrófono:", error);
@@ -103,7 +104,7 @@
 
                 // Grabar audio
                 const audioChunks = [];
-                const mediaRecorder = new MediaRecorder(this.stream.getAudioTracks()[0]);
+                const mediaRecorder = new MediaRecorder(stream.getAudioTracks()[0]);
                 mediaRecorder.start();
 
                 mediaRecorder.ondataavailable = event => {
