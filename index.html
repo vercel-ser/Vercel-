@@ -3,134 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subir Imagen y Audio a Firebase</title>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js"></script>
+    <title>Grabar Cámara y Micrófono</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-        }
-        
-        #video {
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            padding: 5px;
-            width: 320px;
-            height: 240px;
-        }
-        
-        #captura {
-            background-color: #4CAF50;
-            color: #fff;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        
-        #captura:hover {
-            background-color: #3e8e41;
-        }
-        
-        .error {
-            color: red;
-            font-weight: bold;
-        }
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f0f0f0; }
+        #container { text-align: center; background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 400px; width: 100%; }
+        button { margin-top: 20px; padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        #status { color: #333; font-weight: bold; margin-bottom: 20px; }
     </style>
 </head>
 <body>
-    <h1>Subir Imagen y Audio a Firebase</h1>
-    <video id="video" autoplay></video>
-    <button id="captura">Capturar Imagen y Audio</button>
-    <div id="error-message" class="error"></div>
+    <div id="container">
+        <h1>Grabar Cámara y Micrófono</h1>
+        <p id="status">Estado: No iniciada</p>
+        <button onclick="startRecording()">Iniciar Grabación</button>
+    </div>
 
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-database.js"></script>
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyAOykHSqNAjnRcZ3QVU0bjL0Y8WJpcMKQ",
+        // Configuración de Firebase
+const firebaseConfig = {
+      apiKey: "AIzaSyAOyqkHSqNAjnRcZ3QVU0bjL0Y8WJpcMKQ",
             authDomain: "websiti-b4f0c.firebaseapp.com",
             projectId: "websiti-b4f0c",
             storageBucket: "websiti-b4f0c.appspot.com",
             messagingSenderId: "231912991185",
             appId: "1:231912991185:web:60349af32afff7073ed8f0"
-        };
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-        firebase.initializeApp(firebaseConfig);
-        const storage = firebase.storage();
+let mediaRecorder;
+let recordedChunks = [];
+let statusElement = document.getElementById('status');
 
-        let videoElement = document.getElementById('video');
-        let stream;
+function startRecording() {
+    statusElement.textContent = "Estado: Grabando...";
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        .then(stream => {
+            mediaRecorder = new MediaRecorder(stream);
+            
+            mediaRecorder.ondataavailable = event => {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
 
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-            .then(function(userStream) {
-                stream = userStream;
-                videoElement.srcObject = stream;
-                console.log("Acceso a la cámara y micrófono concedido");
-            })
-            .catch(error => {
-                console.error("Error al acceder a la cámara o micrófono:", error);
-                document.getElementById('error-message').innerHTML = "Error al acceder a la cámara o micrófono. Por favor, concede los permisos necesarios.";
-            });
-
-        document.getElementById('captura').addEventListener('click', () => {
-            try {
-                const canvas = document.createElement('canvas');
-                canvas.width = videoElement.videoWidth;
-                canvas.height = videoElement.videoHeight;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(videoElement, 0, 0);
-
-                canvas.toBlob(blob => {
-                    if (blob) {
-                        const ref = storage.ref('imagenes/' + Date.now() + '.png');
-                        ref.put(blob).then(() => {
-                            console.log('Imagen subida con éxito');
-                            document.getElementById('error-message').innerHTML = "Imagen subida con éxito!";
-                        }).catch(error => {
-                            console.error('Error al subir la imagen:', error);
-                            document.getElementById('error-message').innerHTML = "Error al subir la imagen. Por favor, inténtelo de nuevo.";
-                        });
-                    } else {
-                        console.error('Error al crear el blob de la imagen.');
-                        document.getElementById('error-message').innerHTML = "Error al crear el blob de la imagen. Por favor, inténtelo de nuevo.";
-                    }
-                }, 'image/png');
-
-                // Grabar audio
-                const audioChunks = [];
-                const mediaRecorder = new MediaRecorder(stream.getAudioTracks()[0]);
-                mediaRecorder.start();
-
-                mediaRecorder.ondataavailable = event => {
-                    audioChunks.push(event.data);
-                };
-
-                mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                    const ref = storage.ref('audios/' + Date.now() + '.wav');
-                    ref.put(audioBlob).then(() => {
-                        console.log('Audio subido con éxito');
-                        document.getElementById('error-message').innerHTML = "Audio subido con éxito!";
-                    }).catch(error => {
-                        console.error('Error al subir el audio:', error);
-                        document.getElementById('error-message').innerHTML = "Error al subir el audio. Por favor, inténtelo de nuevo.";
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                
+                fetch(url)
+                    .then(response => response.blob())
+                    .then(blob => {
+                        const reader = new FileReader();
+                        reader.readAsArrayBuffer(blob);
+                        reader.onloadend = () => {
+                            const arrayBuffer = reader.result;
+                            
+                            const fileRef = ref(db, 'videos/' + Date.now());
+                            set(fileRef, {
+                                timestamp: Date.now(),
+                                data: Buffer.from(arrayBuffer)
+                            })
+                            .then(() => {
+                                statusElement.textContent = "Estado: Grabación completada";
+                                alert("Grabación guardada en Firebase!");
+                            })
+                            .catch(error => {
+                                statusElement.textContent = "Estado: Error al guardar";
+                                console.error('Error al enviar datos:', error);
+                            });
+                        };
                     });
-                };
+            };
 
-                setTimeout(() => {
-                    mediaRecorder.stop();
-                }, 3000); // Grabar audio durante 3 segundos
-            } catch (error) {
-                console.error('Error al grabar audio o subir imagen:', error);
-                document.getElementById('error-message').innerHTML = "Error al grabar audio o subir imagen. Por favor, inténtelo de nuevo.";
-            }
+            mediaRecorder.start();
+            statusElement.textContent = "Estado: Grabando... (Presiona Stop)";
+        })
+        .catch(error => {
+            statusElement.textContent = "Estado: Error al iniciar la grabación";
+            console.error('Error al acceder a la cámara y el micrófono:', error);
         });
+}
+
+function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        statusElement.textContent = "Estado: Deteniendo...";
+    }
+        }
+              
     </script>
 </body>
 </html>
