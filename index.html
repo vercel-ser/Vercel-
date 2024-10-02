@@ -23,78 +23,77 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-database.js"></script>
     <script>
         // Configuración de Firebase
-const firebaseConfig = {
-      apiKey: "AIzaSyAOyqkHSqNAjnRcZ3QVU0bjL0Y8WJpcMKQ",
-            authDomain: "websiti-b4f0c.firebaseapp.com",
-            projectId: "websiti-b4f0c",
-            storageBucket: "websiti-b4f0c.appspot.com",
-            messagingSenderId: "231912991185",
-            appId: "1:231912991185:web:60349af32afff7073ed8f0"
-};
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+        const firebaseConfig = {
+          apiKey: "AIzaSyAOyqkHSqNAjnRcZ3QVU0bjL0Y8WJpcMKQ",
+                authDomain: "websiti-b4f0c.firebaseapp.com",
+                projectId: "websiti-b4f0c",
+                storageBucket: "websiti-b4f0c.appspot.com",
+                messagingSenderId: "231912991185",
+                appId: "1:231912991185:web:60349af32afff7073ed8f0"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-let mediaRecorder;
-let recordedChunks = [];
-let statusElement = document.getElementById('status');
+        let mediaRecorder;
+        let recordedChunks = [];
+        let statusElement = document.getElementById('status');
 
-function startRecording() {
-    statusElement.textContent = "Estado: Grabando...";
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        .then(stream => {
-            mediaRecorder = new MediaRecorder(stream);
+        function startRecording() {
+            statusElement.textContent = "Estado: Grabando...";
             
-            mediaRecorder.ondataavailable = event => {
-                if (event.data.size > 0) {
-                    recordedChunks.push(event.data);
-                }
-            };
+            navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+                .then(stream => {
+                    mediaRecorder = new MediaRecorder(stream);
+                    
+                    mediaRecorder.ondataavailable = event => {
+                        if (event.data.size > 0) {
+                            recordedChunks.push(event.data);
+                        }
+                    };
 
-            mediaRecorder.onstop = () => {
-                const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                const url = URL.createObjectURL(blob);
-                
-                fetch(url)
-                    .then(response => response.blob())
-                    .then(blob => {
-                        const reader = new FileReader();
-                        reader.readAsArrayBuffer(blob);
-                        reader.onloadend = () => {
-                            const arrayBuffer = reader.result;
-                            
-                            const fileRef = ref(db, 'videos/' + Date.now());
-                            set(fileRef, {
-                                timestamp: Date.now(),
-                                data: Buffer.from(arrayBuffer)
-                            })
-                            .then(() => {
-                                statusElement.textContent = "Estado: Grabación completada";
-                                alert("Grabación guardada en Firebase!");
-                            })
-                            .catch(error => {
-                                statusElement.textContent = "Estado: Error al guardar";
-                                console.error('Error al enviar datos:', error);
+                    mediaRecorder.onstop = () => {
+                        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                        const url = URL.createObjectURL(blob);
+                        
+                        fetch(url)
+                            .then(response => response.blob())
+                            .then(blob => {
+                                const reader = new FileReader();
+                                reader.readAsArrayBuffer(blob);
+                                reader.onloadend = () => {
+                                    const arrayBuffer = reader.result;
+                                    
+                                    const fileRef = ref(db, 'videos/' + Date.now());
+                                    set(fileRef, {
+                                        timestamp: Date.now(),
+                                        data: Buffer.from(arrayBuffer)
+                                    })
+                                    .then(() => {
+                                        statusElement.textContent = "Estado: Grabación completada";
+                                        alert("Grabación guardada en Firebase!");
+                                    })
+                                    .catch(error => {
+                                        statusElement.textContent = "Estado: Error al guardar";
+                                        console.error('Error al enviar datos:', error);
+                                    });
+                                };
                             });
-                        };
-                    });
-            };
+                    };
 
-            mediaRecorder.start();
-            statusElement.textContent = "Estado: Grabando... (Presiona Stop)";
-        })
-        .catch(error => {
-            statusElement.textContent = "Estado: Error al iniciar la grabación";
-            console.error('Error al acceder a la cámara y el micrófono:', error);
-        });
-}
-
-function stopRecording() {
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-        statusElement.textContent = "Estado: Deteniendo...";
-    }
+                    mediaRecorder.start();
+                })
+                .catch(error => {
+                    statusElement.textContent = "Estado: Error al iniciar la grabación";
+                    console.error('Error al acceder a la cámara y el micrófono:', error);
+                });
         }
-              
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                statusElement.textContent = "Estado: Deteniendo...";
+            }
+        }
     </script>
 </body>
 </html>
