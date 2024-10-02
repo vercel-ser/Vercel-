@@ -3,57 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grabar Cámara y Micrófono</title>
+    <title>Subir Imagen a Firebase</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f0f0f0; }
-        #container { text-align: center; background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 400px; width: 100%; }
-        button { margin-top: 20px; padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        button:hover { background-color: #45a049; }
-        #status { color: #333; font-weight: bold; margin-bottom: 20px; }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h1 {
+            color: #4A90E2;
+            margin-bottom: 20px;
+        }
+
+        #video {
+            border: 5px solid #4A90E2;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        #captura {
+            background-color: #4CAF50; /* Verde */
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #captura:hover {
+            background-color: #45a049; /* Verde más oscuro */
+        }
+
+        @media (max-width: 600px) {
+            #video {
+                width: 100%;
+                height: auto;
+            }
+        }
     </style>
 </head>
 <body>
-    <div id="container">
-        <h1>Grabar Cámara y Micrófono</h1>
-        <p id="status">Estado: No iniciada</p>
-        <button onclick="startRecording()">Iniciar Grabación</button>
-    </div>
-
-    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-database.js"></script>
+    <h1>Subir Imagen a Firebase</h1>
+    <video id="video" width="320" height="240" autoplay></video>
+    <button id="captura">Capturar Imagen</button>
     <script>
-        // Configuración de Firebase
+        // Configura Firebase
         const firebaseConfig = {
-          apiKey: "AIzaSyAOyqkHSqNAjnRcZ3QVU0bjL0Y8WJpcMKQ",
-                authDomain: "websiti-b4f0c.firebaseapp.com",
-                projectId: "websiti-b4f0c",
-                storageBucket: "websiti-b4f0c.appspot.com",
-                messagingSenderId: "231912991185",
-                appId: "1:231912991185:web:60349af32afff7073ed8f0"
+            apiKey: "AIzaSyAOyqkHSqNAjnRcZ3QVU0bjL0Y8WJpcMKQ",
+            authDomain: "websiti-b4f0c.firebaseapp.com",
+            projectId: "websiti-b4f0c",
+            storageBucket: "websiti-b4f0c.appspot.com",
+            messagingSenderId: "231912991185",
+            appId: "1:231912991185:web:60349af32afff7073ed8f0"
         };
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
 
-        let mediaRecorder;
-        let recordedChunks = [];
-        let statusElement = document.getElementById('status');
+        // Inicializa Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const storage = firebase.storage();
 
-        function startRecording() {
-            statusElement.textContent = "Estado: Presionado...";
-            
-            // Muestremos una alerta para confirmar que se presionó el botón
-            alert("El botón de inicio de grabación se presionó.");
-            
-            // Aquí podrías agregar más código si lo deseas, por ejemplo,
-            // mostrar una ventana modal con información adicional
-        }
+        const video = document.getElementById('video');
 
-        function stopRecording() {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-                statusElement.textContent = "Estado: Deteniendo...";
-            }
-        }
+        // Solicita acceso a la cámara
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(error => {
+                console.error("Error al acceder a la cámara:", error);
+                alert("No se pudo acceder a la cámara. Asegúrate de que está habilitada.");
+            });
+
+        document.getElementById('captura').addEventListener('click', () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+
+            canvas.toBlob(blob => {
+                if (blob) {
+                    const ref = storage.ref('imagenes/' + Date.now() + '.png');
+                    ref.put(blob).then(() => {
+                        console.log('Imagen subida con éxito');
+                        alert('Imagen subida con éxito');
+                    }).catch(error => {
+                        console.error('Error al subir la imagen:', error);
+                        alert('Error al subir la imagen. Inténtalo de nuevo.');
+                    });
+                } else {
+                    console.error('Error al crear el blob de la imagen.');
+                    alert('Error al capturar la imagen. Inténtalo de nuevo.');
+                }
+            }, 'image/png');
+        });
     </script>
 </body>
 </html>
